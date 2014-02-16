@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 				break;
 		}
 	}
-	//cmd->argv[argc+1]=0;
+
 	if(quote)
 	{
 		printf("%s\n", "Invalid quotes. Exiting program");
