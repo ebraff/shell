@@ -37,10 +37,12 @@ command *parse(char *input)
                     while(input[count + 1] == ' ')
                          count++;
                     
-                    cmd->argv[cmd->argc + 1] = input + count + 1;
-                    if (cmd->argv[cmd->argc + 1][0] != '|'
-                        && cmd->argv[cmd->argc + 1][0] != '\0')
-                         cmd->argc++;
+
+                    cmd->argv[++arg] = input + count + 1;
+                    if (cmd->argv[arg][0] != '|'
+                        && cmd->argv[arg][0] != '\0')
+	                    cmd->argc++;
+
                }
                break;                          
           case '\"' : // falls into the next case
@@ -63,6 +65,7 @@ command *parse(char *input)
                     cmd->next = (command *)malloc(sizeof(struct command));
                     cmd = cmd->next;
                     cmd->argc = 1;
+                    arg=0;
                     
                     // remove extra spaces
                     while(input[count + 1] == ' ')
@@ -79,7 +82,7 @@ command *parse(char *input)
      if(quote)
      {
           printf("%s\n", "Invalid quotes. Exiting program");
-          //exit(1);
+          return NULL;
      }
      return head;
      
@@ -158,16 +161,18 @@ void freeCmd(command *cmd)
 void printCmd(command *cmd)
 {
      int i;
-     if (cmd != NULL)
+     while (cmd)
      {
           printf("--------\n");
           printf("num args: %d\n",cmd->argc);
           for (i = 0; i < cmd->argc; i++)
           {
-               printf("arg %d:\t%s{}\n",i,cmd->argv[i]);
+               printf("arg %d:\t%s\n",i,cmd->argv[i]);
           }
           printf("--------\n");
+          cmd=cmd->next;
      }
+     
 }
 
 
@@ -235,19 +240,25 @@ int main(int argc, char **argv)
      while(fgets(input, 1024, stdin) != NULL) 
      {
           
-          if (strlen(input) < 2)
-          {
-               printf("$  ");               
-          }
+        if (strlen(input) < 2)
+               printf("$  ");
 
           else
           {
                
-               cmd = parse(input);
-               
-               process(cmd);
-               printCmd(cmd); 
-               freeCmd(cmd);
+            cmd = parse(input);
+            printCmd(cmd);
+            
+            if(cmd)
+				process(cmd);
+			else if (isatty(0))
+                printf("$  Invalid Command!!!!");
+			else	
+				printf("  Invalid Command!!!!");
+				
+			
+                
+            freeCmd(cmd);
                
                /* int i,j=1; */
                

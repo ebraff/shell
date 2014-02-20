@@ -11,6 +11,9 @@ header: shell.h
 run: shell
 	./shell
 
+debug: shell
+	gdb shell
+
 clean:
 	rm -f shell
 	rm -f head
