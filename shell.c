@@ -83,6 +83,13 @@ command *parse(char *input)
      
 }
 
+functionTable *buildFunctionTable(void) 
+{
+     functionTable *table = (functionTable *)malloc(sizeof(struct functionTable));
+
+}
+
+
 // frees the command from memory
 void freeCmd(command *cmd) 
 {
@@ -139,6 +146,9 @@ void process(command *cmd)
      
      
 }
+
+
+
 
 void cd(command *cmd)
 {
