@@ -37,12 +37,12 @@ command *parse(char *input)
                     while(input[count + 1] == ' ')
                          count++;
                     
-
+                    
                     cmd->argv[++arg] = input + count + 1;
                     if (cmd->argv[arg][0] != '|'
                         && cmd->argv[arg][0] != '\0')
-	                    cmd->argc++;
-
+                         cmd->argc++;
+                    
                }
                break;                          
           case '\"' : // falls into the next case
@@ -111,8 +111,8 @@ int cd_cmd(command *cmd)
      else                       /* barf */
      {
           fprintf(stderr, "cd: too many arguments\n");
-
-
+          
+          
           fprintf(stderr, "                  BBEEEUUUUUUAAAAAHHHHH...\n");
           fprintf(stderr, "\n");
           fprintf(stderr, "                    %%%%%%\n");
@@ -128,7 +128,7 @@ int cd_cmd(command *cmd)
           fprintf(stderr, "         ___// (_  - (         \\\n");
           fprintf(stderr, "        ///-(    \\'   \\\\ b'ger\n");
      }
-
+     
 }
 
 int exit_cmd(command *cmd) 
@@ -217,6 +217,9 @@ void process(command *cmd)
           pid = wait(&status);
           if (pid == -1)
                exit(1);
+          if (WIFEXITED(status)) {
+               printf("process %d exit with status %d\n", pid, WEXITSTATUS(status));
+          }
      }     
      
 }
@@ -240,25 +243,25 @@ int main(int argc, char **argv)
      while(fgets(input, 1024, stdin) != NULL) 
      {
           
-        if (strlen(input) < 2)
+          if (strlen(input) < 2)
                printf("$  ");
-
+          
           else
           {
                
-            cmd = parse(input);
-            printCmd(cmd);
-            
-            if(cmd)
-				process(cmd);
-			else if (isatty(0))
-                printf("$  Invalid Command!!!!");
-			else	
-				printf("  Invalid Command!!!!");
-				
-			
-                
-            freeCmd(cmd);
+               cmd = parse(input);
+               printCmd(cmd);
+               
+               if(cmd)
+                    process(cmd);
+               else if (isatty(0))
+                    printf("$  Invalid Command!!!!");
+               else	
+                    printf("  Invalid Command!!!!");
+               
+               
+               
+               freeCmd(cmd);
                
                /* int i,j=1; */
                
