@@ -35,8 +35,10 @@ command *parse(char *input)
                     while(input[count + 1] == ' ')
                          count++;
                     
-                    cmd->argv[cmd->argc++] = input + count + 1;
-                    //cmd->argc++;
+                    cmd->argv[cmd->argc + 1] = input + count + 1;
+                    if (cmd->argv[cmd->argc + 1][0] != '|'
+                        || cmd->argv[cmd->argc + 1][0] != '\0')
+	                    cmd->argc++;
                }
                break;                          
           case '\"' : // falls into the next case
@@ -111,6 +113,16 @@ void printCmd(command *cmd)
 
 void process(command *cmd) 
 {
+     // check for exit
+     if (strcmp(cmd->argv[0], "exit") == 0)
+          exit(0);
+     // check for cd
+     else if (strcmp(cmd->argv[0], "cd") == 0)
+     {
+         cd(cmd);
+         return;
+     }
+
      int pid = fork();
      int status;
      
@@ -128,6 +140,10 @@ void process(command *cmd)
      
 }
 
+void cd(command *cmd)
+{
+     printf("input cd code here\n");
+}
 
 int main(int argc, char **argv)
 {
@@ -152,7 +168,7 @@ int main(int argc, char **argv)
                cmd = parse(input);
                
                process(cmd);
-               
+              printCmd(cmd); 
                freeCmd(cmd);
                
                /* int i,j=1; */

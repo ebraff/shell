@@ -10,3 +10,9 @@ typedef struct command
 	int argc;
 	struct command *next;
 } command;
+
+command *parse(char *input);
+void freeCmd(command *cmd);
+void printCmd(command *cmd);
+void process(command *cmd);
+void cd(command *cmd);
