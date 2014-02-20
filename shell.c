@@ -1,5 +1,6 @@
 // Group Members : Alexander DeOliveira, Elana Braff, Jesse Huang
 #include "shell.h"
+#define NUM_COMMANDS 2
 
 // takes in pointer to user input,
 // and pointer to cmd (assumes it is already allocated)
@@ -20,9 +21,9 @@ command *parse(char *input)
      if (input[strlen(input)-1] == '\n') {
           input[strlen(input)-1] = '\0';
      }
-
-
-
+     
+     
+     
      for(count = 0; input[count] != '\0' || count < strlen(input); count++)
      {
           // what is the current character
@@ -36,10 +37,12 @@ command *parse(char *input)
                     while(input[count + 1] == ' ')
                          count++;
                     
+
                     cmd->argv[++arg] = input + count + 1;
                     if (cmd->argv[arg][0] != '|'
                         && cmd->argv[arg][0] != '\0')
 	                    cmd->argc++;
+
                }
                break;                          
           case '\"' : // falls into the next case
@@ -53,7 +56,7 @@ command *parse(char *input)
                     quote = 1;
                     start = count;
                }
-               break;
+          break;
           case '|' :
                if (!quote) // found a pipe not inside of a quote 
                {
@@ -84,6 +87,43 @@ command *parse(char *input)
      return head;
      
 }
+
+struct builtins functionTable[NUM_COMMANDS];
+
+// counts the number of arguments for a command
+int getNumArgs(command *cmd) 
+{
+     return cmd->argc;
+}
+
+
+int cd_cmd(command *cmd) 
+{
+     int numArgs = getNumArgs(cmd);
+     if (numArgs == 1)
+     {
+          chdir(getenv("HOME"));
+     }
+     else
+          chdir(cmd->argv[1]);          
+}
+
+int exit_cmd(command *cmd) 
+{
+     // free everything
+     freeCmd(cmd);
+     exit(0);
+}
+
+void buildFunctionTable(void) 
+{
+     functionTable[0].name = "cd";
+     functionTable[0].f = &cd_cmd;
+     functionTable[1].name = "exit";
+     functionTable[1].f = &exit_cmd;
+}
+
+
 
 // frees the command from memory
 void freeCmd(command *cmd) 
@@ -117,37 +157,50 @@ void printCmd(command *cmd)
 
 void process(command *cmd) 
 {
-     // check for exit
-     if (strcmp(cmd->argv[0], "exit") == 0)
-          exit(0);
-     // check for cd
-     else if (strcmp(cmd->argv[0], "cd") == 0)
+     /* // check for exit */
+     /* if (strcmp(cmd->argv[0], "exit") == 0) */
+     /*      exit(0); */
+     /* // check for cd */
+     /* else if (strcmp(cmd->argv[0], "cd") == 0) */
+     /* { */
+     /*     cd(cmd); */
+     /*     return; */
+     /* } */
+     
+     int i;
+     int executedBuiltin = 0;
+     int pid, status;
+     // check for built in commands
+     for (i = 0; i < NUM_COMMANDS; i++) 
      {
-         cd(cmd);
-         return;
+          if (strcmp(functionTable[i].name, cmd->argv[0]) == 0)
+          {
+               (*(functionTable[i].f))(cmd);
+               executedBuiltin = 1;
+               break;
+          }
      }
-
-     int pid = fork();
-     int status;
-     
-     if (pid == 0) 
+     if (!executedBuiltin)
      {
-          // child process
-          execvp(cmd->argv[0], cmd->argv);
-          perror(cmd->argv[0]);
-          exit(1);
-     } 
-     pid = wait(&status);
-     if (pid == -1)
-          exit(1);
-     
+          pid = fork();
+          
+          if (pid == 0) 
+          {
+               // child process
+               execvp(cmd->argv[0], cmd->argv);
+               perror(cmd->argv[0]);
+               exit(1);
+          } 
+          pid = wait(&status);
+          if (pid == -1)
+               exit(1);
+     }     
      
 }
 
-void cd(command *cmd)
-{
-     printf("input cd code here\n");
-}
+
+
+
 
 int main(int argc, char **argv)
 {
@@ -158,6 +211,8 @@ int main(int argc, char **argv)
      // cmd points to current command structure
      command *cmd = 0;
      
+     buildFunctionTable();
+     
      if (isatty(0))
           printf("$  ");
      
@@ -166,6 +221,7 @@ int main(int argc, char **argv)
           
         if (strlen(input) < 2)
                printf("$  ");
+
           else
           {
                
