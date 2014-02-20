@@ -6,16 +6,17 @@
 
 typedef struct command
 {
-	char *argv[50];
-	int argc;
-	struct command *next;
+     char *argv[50];
+     int argc;
+     struct command *next;
 } command;
 
 typedef struct builtins 
 {
      char *name;	/* name of function */
-     int (*f)();	/* function to execute for the built-in command */
-} builtin;
+     int (*f)(command *c);	/* function to execute for the built-in command */
+} builtins;
+
 
 
 command *parse(char *input);
