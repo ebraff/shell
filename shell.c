@@ -9,6 +9,7 @@ command *parse(char *input)
      command *cmd;
      if (!(cmd = (command *)malloc(sizeof(struct command)))) {
           printf("bad memory allocation\n");
+          exit(1);
      }
      command *head = cmd;
      cmd->argv[0] = input;
@@ -37,7 +38,7 @@ command *parse(char *input)
                     
                     cmd->argv[cmd->argc + 1] = input + count + 1;
                     if (cmd->argv[cmd->argc + 1][0] != '|'
-                        || cmd->argv[cmd->argc + 1][0] != '\0')
+                        && cmd->argv[cmd->argc + 1][0] != '\0')
 	                    cmd->argc++;
                }
                break;                          
@@ -178,7 +179,7 @@ int main(int argc, char **argv)
                cmd = parse(input);
                
                process(cmd);
-              printCmd(cmd); 
+               printCmd(cmd); 
                freeCmd(cmd);
                
                /* int i,j=1; */
