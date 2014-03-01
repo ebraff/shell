@@ -6,7 +6,7 @@
 // and pointer to cmd (assumes it is already allocated)
 command *parse(char *input) 
 {
-     int count, arg = 0, start = 0,quote = 0;
+     int count = 0, arg = 0, start = 0,quote = 0;
      command *cmd;
      if (!(cmd = (command *)malloc(sizeof(struct command)))) {
           printf("bad memory allocation\n");
@@ -22,9 +22,18 @@ command *parse(char *input)
           input[strlen(input)-1] = '\0';
      }
      
+	// remove extra spaces
+	while(input[count] == ' ')
+		count++;
+
+	if (input[count] == 0)
+	{
+		cmd->argc = 0;
+		return cmd;
+	}
      
      
-     for(count = 0; input[count] != '\0' || count < strlen(input); count++)
+     for(; input[count] != '\0' || count < strlen(input); count++)
      {
           // what is the current character
           switch(input[count])
@@ -169,32 +178,62 @@ void process(command *cmd)
      
      int i;
      int executedBuiltin = 0;
-     int pid, status;
-     // check for built in commands
-     for (i = 0; i < NUM_COMMANDS; i++) 
-     {
-          if (strcmp(functionTable[i].name, cmd->argv[0]) == 0)
-          {
-               (*(functionTable[i].f))(cmd);
-               executedBuiltin = 1;
-               break;
-          }
-     }
-     if (!executedBuiltin)
-     {
-          pid = fork();
-          
-          if (pid == 0) 
-          {
-               // child process
-               execvp(cmd->argv[0], cmd->argv);
-               perror(cmd->argv[0]);
-               exit(1);
-          } 
-          pid = wait(&status);
-          if (pid == -1)
-               exit(1);
-     }     
+     int pid, status, firstCmd = 1;
+     command *prev;
+     
+     while (cmd){
+		// check for built in commands
+		 for (i = 0; i < NUM_COMMANDS; i++) 
+		 {
+			  if (strcmp(functionTable[i].name, cmd->argv[0]) == 0)
+			  {
+				   (*(functionTable[i].f))(cmd);
+				   executedBuiltin = 1;
+				   break;
+			  }
+		 }
+		 
+		if (!executedBuiltin)
+		{
+			pipe(cmd->pipe);
+			
+			switch (pid = fork()){
+			  
+			case 0: /* child */ 
+				printf("child\n");
+				if(firstCmd == 1){ /* First command */
+					dup2(cmd->pipe[1],1);
+					firstCmd = 0;
+				}
+				else if(cmd->next != NULL){ /* Not first or last command */
+					dup2(prev->pipe[0],0);
+					dup2(cmd->pipe[1],1);
+				}
+				else if(cmd->next == NULL){ /* last command */
+					dup2(prev->pipe[0],0);
+				}
+				
+				execvp(cmd->argv[0], cmd->argv);
+				perror(cmd->argv[0]);
+				exit(1);
+			 
+			default: /*parent */
+				printf("parent\n");
+				pid = wait(&status);
+				break;
+				
+			case -1:
+				perror("error forking");
+				exit(1);
+			}
+			
+		
+		} 
+		prev = cmd;
+		cmd = cmd->next;
+		executedBuiltin = 0;
+	 }
+    
      
 }
 
@@ -226,9 +265,16 @@ int main(int argc, char **argv)
           {
                
             cmd = parse(input);
-            printCmd(cmd);
+            //printCmd(cmd);
             
-            if(cmd)
+            if(cmd && cmd->argc == 0)
+			{
+				freeCmd(cmd);
+				if (isatty(0))
+					printf("$  ");
+				continue;
+			}
+			else if (cmd)
 				process(cmd);
 			else if (isatty(0))
                 printf("$  Invalid Command!!!!");
@@ -239,20 +285,8 @@ int main(int argc, char **argv)
                 
             freeCmd(cmd);
                
-               /* int i,j=1; */
-               
-               /* while(cmd!=NULL){ */
-               /*      printf("command %d: ", j++); */
-               /*      for(i = 0; i < cmd->argc; i++) */
-               /*           printf("'%s', ", cmd->argv[i]); */
-               /*      printf("\n"); */
-               /*      command *temp = cmd; */
-               /*      cmd=cmd->next; */
-               /*      free(temp); */
-               /* } */
-               
-               if (isatty(0))
-                    printf("$  ");
+		   if (isatty(0))
+				printf("$  ");
           }
      }     
      return 0;

@@ -8,6 +8,7 @@ typedef struct command
 {
      char *argv[50];
      int argc;
+     int pipe[2];
      struct command *next;
 } command;
 
@@ -24,3 +25,12 @@ void freeCmd(command *cmd);
 void printCmd(command *cmd);
 void process(command *cmd);
 void cd(command *cmd);
+int getNumArgs(command *cmd);
+
+int cd_cmd(command *cmd);
+
+int exit_cmd(command *cmd);
+
+void buildFunctionTable(void);
+
+
