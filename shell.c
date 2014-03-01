@@ -189,21 +189,11 @@ void printCmd(command *cmd)
 
 void process(command *cmd) 
 {
-     /* // check for exit */
-     /* if (strcmp(cmd->argv[0], "exit") == 0) */
-     /*      exit(0); */
-     /* // check for cd */
-     /* else if (strcmp(cmd->argv[0], "cd") == 0) */
-     /* { */
-     /*     cd(cmd); */
-     /*     return; */
-     /* } */
      
      int i;
      int executedBuiltin = 0;
-<<<<<<< HEAD
      int pid, status, firstCmd = 1;
-     command *prev;
+     command *prev, *head = cmd;
      
      while (cmd){
 		// check for built in commands
@@ -224,17 +214,22 @@ void process(command *cmd)
 			switch (pid = fork()){
 			  
 			case 0: /* child */ 
-				printf("child\n");
+				//printf("child\n");
 				if(firstCmd == 1){ /* First command */
-					dup2(cmd->pipe[1],1);
-					firstCmd = 0;
+                    if(cmd->next) /* if there is a pipe */
+                        dup2(cmd->pipe[1],1);
+                    close(cmd->pipe[0]);
+                    firstCmd = 0;
 				}
 				else if(cmd->next != NULL){ /* Not first or last command */
 					dup2(prev->pipe[0],0);
+                    close(prev->pipe[1]);
 					dup2(cmd->pipe[1],1);
+                    close(cmd->pipe[0]);
 				}
 				else if(cmd->next == NULL){ /* last command */
 					dup2(prev->pipe[0],0);
+                    close(prev->pipe[1]);
 				}
 				
 				execvp(cmd->argv[0], cmd->argv);
@@ -242,11 +237,8 @@ void process(command *cmd)
 				exit(1);
 			 
 			default: /*parent */
-				printf("parent\n");
-				pid = wait(&status);
-				if (WIFEXITED(status)) {
-					printf("process %d exit with status %d\n", pid, WEXITSTATUS(status));
-				}
+				//printf("parent\n");
+				
 				break;
 				
 			case -1:
@@ -260,9 +252,12 @@ void process(command *cmd)
 		cmd = cmd->next;
 		executedBuiltin = 0;
 
-     }     
-
+     }
      
+    while (pid = wait(&status) > 0);
+	if (WIFEXITED(status)) {
+		printf("process %d exit with status %d\n", pid, WEXITSTATUS(status));
+	}   
 }
 
 
