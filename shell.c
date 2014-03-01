@@ -230,6 +230,8 @@ void process(command *cmd)
 				else if(cmd->next == NULL){ /* last command */
 					dup2(prev->pipe[0],0);
                     close(prev->pipe[1]);
+                    close(cmd->pipe[0]);
+                    close(cmd->pipe[1]);
 				}
 				
 				execvp(cmd->argv[0], cmd->argv);
@@ -253,11 +255,12 @@ void process(command *cmd)
 
      }
     
-    while (head) {
-					close(head->pipe[0]);
-					close(head->pipe[1]);
-					head = head->next;
-				}  
+    while (head) 
+    {
+		close(head->pipe[0]);
+		close(head->pipe[1]);
+		head = head->next;
+	}  
     while ((pid = wait(&status)) != -1)	/* pick up all the dead children */
 		fprintf(stderr, "process %d exits with %d\n", pid, WEXITSTATUS(status));
 }
@@ -286,7 +289,7 @@ int main(int argc, char **argv)
           
           else
           {
-            printf("%s \n", input);
+           // printf("%s \n", input);
             cmd = parse(input);
             
             
