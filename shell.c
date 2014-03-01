@@ -46,12 +46,12 @@ command *parse(char *input)
                     while(input[count + 1] == ' ')
                          count++;
                     
-
+                    
                     cmd->argv[++arg] = input + count + 1;
                     if (cmd->argv[arg][0] != '|'
                         && cmd->argv[arg][0] != '\0')
-	                    cmd->argc++;
-
+                         cmd->argc++;
+                    
                }
                break;                          
           case '\"' : // falls into the next case
@@ -113,8 +113,31 @@ int cd_cmd(command *cmd)
      {
           chdir(getenv("HOME"));
      }
-     else
-          chdir(cmd->argv[1]);          
+     else if (numArgs == 2) 
+     {
+          chdir(cmd->argv[1]);                    
+     }
+     else                       /* barf */
+     {
+          fprintf(stderr, "cd: too many arguments\n");
+          
+          
+          fprintf(stderr, "                  BBEEEUUUUUUAAAAAHHHHH...\n");
+          fprintf(stderr, "\n");
+          fprintf(stderr, "                    %%%%%%\n");
+          fprintf(stderr, "                   %%%% = =\n");
+          fprintf(stderr, "                   %%C    >\n");
+          fprintf(stderr, "                    _)' _( .' ,\n");
+          fprintf(stderr, "                 __/ |_/\\   \" *. o\n");
+          fprintf(stderr, "                /` \\_\\ \\/     %`= '_  .\n");
+          fprintf(stderr, "               /  )   \\/|      .^',*. ,\n");
+          fprintf(stderr, "              /' /-   o/       - \" % '_\n");
+          fprintf(stderr, "             /\\_/     <       = , ^ ~ .\n");
+          fprintf(stderr, "             )_o|----'|          .`  '\n");
+          fprintf(stderr, "         ___// (_  - (         \\\n");
+          fprintf(stderr, "        ///-(    \\'   \\\\ b'ger\n");
+     }
+     
 }
 
 int exit_cmd(command *cmd) 
@@ -178,6 +201,7 @@ void process(command *cmd)
      
      int i;
      int executedBuiltin = 0;
+<<<<<<< HEAD
      int pid, status, firstCmd = 1;
      command *prev;
      
@@ -220,6 +244,9 @@ void process(command *cmd)
 			default: /*parent */
 				printf("parent\n");
 				pid = wait(&status);
+				if (WIFEXITED(status)) {
+					printf("process %d exit with status %d\n", pid, WEXITSTATUS(status));
+				}
 				break;
 				
 			case -1:
@@ -232,12 +259,11 @@ void process(command *cmd)
 		prev = cmd;
 		cmd = cmd->next;
 		executedBuiltin = 0;
-	 }
-    
+
+     }     
+
      
 }
-
-
 
 
 
@@ -258,9 +284,9 @@ int main(int argc, char **argv)
      while(fgets(input, 1024, stdin) != NULL) 
      {
           
-        if (strlen(input) < 2)
+          if (strlen(input) < 2)
                printf("$  ");
-
+          
           else
           {
                
