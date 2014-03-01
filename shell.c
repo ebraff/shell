@@ -192,7 +192,7 @@ void process(command *cmd)
      
      int i;
      int executedBuiltin = 0;
-     int pid, status, firstCmd = 1;
+     int pid, status, firstCmd = 1, numThreads = 0;
      command *prev, *head = cmd;
      
      while (cmd){
@@ -238,7 +238,6 @@ void process(command *cmd)
 			 
 			default: /*parent */
 				//printf("parent\n");
-				
 				break;
 				
 			case -1:
@@ -253,11 +252,14 @@ void process(command *cmd)
 		executedBuiltin = 0;
 
      }
-     
-    while (pid = wait(&status) > 0);
-	if (WIFEXITED(status)) {
-		printf("process %d exit with status %d\n", pid, WEXITSTATUS(status));
-	}   
+    
+    while (head) {
+					close(head->pipe[0]);
+					close(head->pipe[1]);
+					head = head->next;
+				}  
+    while ((pid = wait(&status)) != -1)	/* pick up all the dead children */
+		fprintf(stderr, "process %d exits with %d\n", pid, WEXITSTATUS(status));
 }
 
 
@@ -284,9 +286,9 @@ int main(int argc, char **argv)
           
           else
           {
-               
+            printf("%s \n", input);
             cmd = parse(input);
-            //printCmd(cmd);
+            
             
             if(cmd && cmd->argc == 0)
 			{
