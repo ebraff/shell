@@ -35,6 +35,12 @@ command *parse(char *input)
      
      for(; input[count] != '\0' || count < strlen(input); count++)
      {
+		  if (cmd->argc == 50)
+		  {
+			  printf("Too many arguments!\n");
+			  head->argc = 0;
+			  return;
+		  }
           // what is the current character
           switch(input[count])
           {
@@ -275,15 +281,14 @@ int main(int argc, char **argv)
      
      // cmd points to current command structure
      command *cmd = 0;
-     
+
      buildFunctionTable();
      
      if (isatty(0))
           printf("$  ");
      
      while(fgets(input, 1024, stdin) != NULL) 
-     {
-          
+     {     
           if (strlen(input) < 2)
                printf("$  ");
           

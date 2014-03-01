@@ -6,7 +6,7 @@
 
 typedef struct command
 {
-     char *argv[50];
+     char *argv[51];
      int argc;
      int pipe[2];
      struct command *next;
