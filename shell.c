@@ -2,8 +2,9 @@
 #include "shell.h"
 #define NUM_COMMANDS 2
 
-/* takes in pointer to user input, */
-/* and pointer to cmd (assumes it is already allocated) */
+/* takes in pointer to user input,
+   and pointer to cmd (assumes it is already allocated) */
+
 command *parse(char *input) 
 {
      int count, arg = 0, start = 0,quote = 0;
@@ -31,8 +32,7 @@ command *parse(char *input)
           {
                printf("Too many arguments!\n");
                head->argc = 0;
-               freeCmd(head);
-               return NULL;
+               return head;
           }
           /* what is the current character */
           switch(input[count])
@@ -41,6 +41,7 @@ command *parse(char *input)
                if (!quote)  /* found a space not inside of a quote */
                {
                     input[count] = '\0';
+
                     /* remove extra spaces */
                     while(input[count + 1] == ' ')
                          count++;
@@ -69,7 +70,7 @@ command *parse(char *input)
                }
           break;
           case '|' :
-               if (!quote)  /* found a pipe not inside of a quote  */
+               if (!quote) /* found a pipe not inside of a quote */
                {
                     (cmd->argc)++;
                     /* Create new command struct */
@@ -94,9 +95,9 @@ command *parse(char *input)
      }
      if(quote)
      {
-          fprintf(stderr, "%s\n", "Mismatched quotes");
-          freeCmd(head);
-          return NULL;
+          fprintf(stderr, "%s\n", "error : mismatched quotes");
+          head->argc = 0;
+          return head;
      }
      (cmd->argc)++;
      return head;
@@ -160,6 +161,7 @@ int exit_cmd(command *cmd)
           fprintf(stderr, "exit: too many arguments\n");
           return 1;
      }
+
      /* free everything */
      freeCmd(cmd);
      exit(exitCode);
@@ -202,6 +204,23 @@ void printCmd(command *cmd)
      
 }
 
+/* checks the given command to see if it is builtin if it is it will execute and return 1
+ * if not it will return 0 */
+int isBuiltIn(command *cmd)
+{
+     int i;
+     for (i = 0; i < NUM_COMMANDS; i++) 
+     {
+          if (strcmp(functionTable[i].name, cmd->argv[0]) == 0)
+          {
+               (*(functionTable[i].f))(cmd);
+               return 1;
+          }
+     }
+     return 0;
+}
+
+/* helper function for process it will handle all piping */
 void processPipe(command *cmd) 
 {
      int fd[2];
@@ -211,6 +230,9 @@ void processPipe(command *cmd)
      
      while (cmd != NULL)
      {
+          if (isBuiltIn(cmd))
+               return;
+
           pipe(fd);
           pid = fork();
           if (pid == -1)
@@ -240,24 +262,12 @@ void processPipe(command *cmd)
      }
 }
 
-/* process command */
 
+/* process command */
 void process(command *cmd) 
 {
-     int i;
-     int executedBuiltin = 0;
-     
-     /* check for built in commands */
-     for (i = 0; i < NUM_COMMANDS; i++) 
-     {
-          if (strcmp(functionTable[i].name, cmd->argv[0]) == 0)
-          {
-               (*(functionTable[i].f))(cmd);
-               executedBuiltin = 1;
-               break;
-          }
-     }
-     if (!executedBuiltin)
+     /* check for built in commands*/
+     if (!isBuiltIn(cmd))
      {
           processPipe(cmd);
      }     
@@ -269,13 +279,16 @@ void process(command *cmd)
 int main(int argc, char **argv)
 {
      char input[1024];
+     
+     /* cmd points to current command structure */
      command *cmd = 0;
      
      buildFunctionTable();
      
      if (isatty(0))
           printf("$  ");
-     
+
+     /* grab input */ 
      while(fgets(input, 1024, stdin) != NULL) 
      {
           
@@ -283,22 +296,28 @@ int main(int argc, char **argv)
                printf("$  ");
           else
           {
-               cmd = parse(input);
-               
-               if(cmd && cmd->argc == 0)
-               {
-                    freeCmd(cmd);
-                    if (isatty(0))
-                         printf("$  ");
-                    continue;
-               }
-               else if (cmd)
-                    process(cmd);
-               
-               freeCmd(cmd);
-               
-               if (isatty(0))
-                    printf("$  ");
+
+              cmd = parse(input);
+
+              /* few error checking conditions */
+              if(cmd && cmd->argc == 0)
+              {
+                  freeCmd(cmd);
+                  if (isatty(0))
+                      printf("$  ");
+                  continue;
+              }
+              else if (cmd)
+                  process(cmd);
+              else if (isatty(0))
+                  printf("$  Invalid Command!!!!");
+              else
+                  printf("  Invalid Command!!!!");
+                  
+              freeCmd(cmd);
+                  
+              if (isatty(0))
+                  printf("$  ");
           }
      }     
      return 0;
