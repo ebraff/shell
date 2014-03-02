@@ -80,6 +80,7 @@ command *parse(char *input)
                     input[count] = '\0';
                     cmd->next = (command *)malloc(sizeof(struct command));
                     cmd = cmd->next;
+                    memset(cmd->argv,0,51);
                     cmd->argc = 1;
                     arg=0;
                     
