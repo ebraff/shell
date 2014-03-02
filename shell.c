@@ -1,18 +1,18 @@
-// Group Members : Alexander DeOliveira, Elana Braff, Jesse Huang
+/* Group Members : Alexander DeOliveira, Elana Braff, Jesse Huang */
 #include "shell.h"
 #define NUM_COMMANDS 2
 
-// takes in pointer to user input,
-// and pointer to cmd (assumes it is already allocated)
+/* takes in pointer to user input, */
+/* and pointer to cmd (assumes it is already allocated) */
 command *parse(char *input) 
 {
      int count, arg = 0, start = 0,quote = 0;
-     command *cmd;
+     command *cmd, *head;
      if (!(cmd = (command *)malloc(sizeof(struct command)))) {
           printf("bad memory allocation\n");
           exit(1);
      }
-     command *head = cmd;
+     head = cmd;
      memset(cmd->argv, 0, 51);
      cmd->argv[0] = input;
      cmd->argc = 1;
@@ -31,16 +31,17 @@ command *parse(char *input)
           {
                printf("Too many arguments!\n");
                head->argc = 0;
-               return;
+               freeCmd(head);
+               return NULL;
           }
-          // what is the current character
+          /* what is the current character */
           switch(input[count])
           {
           case ' ' :
-               if (!quote) // found a space not inside of a quote
+               if (!quote)  /* found a space not inside of a quote */
                {
                     input[count] = '\0';
-                    // remove extra spaces
+                    /* remove extra spaces */
                     while(input[count + 1] == ' ')
                          count++;
                     
@@ -55,23 +56,23 @@ command *parse(char *input)
                     
                }
                break;                          
-          case '\"' : // falls into the next case
+          case '\"' : /* falls into the next case */
           case '\'' :
-               if (quote && input[start] == input[count]) // check the quote flag to see if we are looking for a matching quote
+               if (quote && input[start] == input[count]) /* check the quote flag to see if we are looking for a matching quote */
                {
                     quote = 0;
                }
-               else if (!quote)// found the start of a quoted argument
+               else if (!quote) /* found the start of a quoted argument */
                {
                     quote = 1;
                     start = count;
                }
           break;
           case '|' :
-               if (!quote) // found a pipe not inside of a quote 
+               if (!quote)  /* found a pipe not inside of a quote  */
                {
                     (cmd->argc)++;
-                    //Create new command struct
+                    /* Create new command struct */
                     input[count] = '\0';
                     cmd->next = (command *)malloc(sizeof(struct command));
                     cmd = cmd->next;
@@ -79,7 +80,7 @@ command *parse(char *input)
                     arg=0;
                     memset(cmd->argv, 0, 51);
                     
-                    // remove extra spaces
+                    /* remove extra spaces */
                     while(input[count + 1] == ' ')
                          count++;
                     
@@ -94,7 +95,7 @@ command *parse(char *input)
      if(quote)
      {
           fprintf(stderr, "%s\n", "Mismatched quotes");
-          freeCmd(cmd);
+          freeCmd(head);
           return NULL;
      }
      (cmd->argc)++;
@@ -104,7 +105,7 @@ command *parse(char *input)
 
 struct builtins functionTable[NUM_COMMANDS];
 
-// counts the number of arguments for a command
+/* counts the number of arguments for a command */
 int getNumArgs(command *cmd) 
 {
      return cmd->argc - 1;
@@ -129,9 +130,9 @@ int cd_cmd(command *cmd)
           
           fprintf(stderr, "                  BBEEEUUUUUUAAAAAHHHHH...\n");
           fprintf(stderr, "\n");
-          fprintf(stderr, "                    %%%%%%\n");
-          fprintf(stderr, "                   %%%% = =\n");
-          fprintf(stderr, "                   %%C    >\n");
+          fprintf(stderr, "                    %%%%%%%%%%%%\n");
+          fprintf(stderr, "                   %%%%%%%% = =\n");
+          fprintf(stderr, "                   %%%%C    >\n");
           fprintf(stderr, "                    _)' _( .' ,\n");
           fprintf(stderr, "                 __/ |_/\\   \" *. o\n");
           fprintf(stderr, "                /` \\_\\ \\/     %`= '_  .\n");
@@ -141,8 +142,9 @@ int cd_cmd(command *cmd)
           fprintf(stderr, "             )_o|----'|          .`  '\n");
           fprintf(stderr, "         ___// (_  - (         \\\n");
           fprintf(stderr, "        ///-(    \\'   \\\\ b'ger\n");
+          return 1;
      }
-     
+     return 0;
 }
 
 int exit_cmd(command *cmd) 
@@ -158,7 +160,7 @@ int exit_cmd(command *cmd)
           fprintf(stderr, "exit: too many arguments\n");
           return 1;
      }
-     // free everything
+     /* free everything */
      freeCmd(cmd);
      exit(exitCode);
 }
@@ -173,7 +175,7 @@ void buildFunctionTable(void)
 
 
 
-// frees the command from memory
+/* frees the command from memory */
 void freeCmd(command *cmd) 
 {
      while(cmd!=NULL){
@@ -202,9 +204,9 @@ void printCmd(command *cmd)
 
 void processPipe(command *cmd) 
 {
-     int   fd[2];
-     pid_t pid;
-     int   fd_in = 0;
+     int fd[2];
+     int pid;
+     int fd_in = 0;
      int status;
      
      while (cmd != NULL)
@@ -228,12 +230,8 @@ void processPipe(command *cmd)
           else
           {
                /* parent */
-               pid = wait(&status);
-               if (pid == -1)
-                    exit(1);
-               if (WIFEXITED(status)) {
-                    printf("process %d exit with status %d\n", pid, WEXITSTATUS(status));
-               }
+               while ((pid = wait(&status)) != -1)
+                    fprintf(stderr, "process %d exits with %d\n", pid, WEXITSTATUS(status));
                
                close(fd[1]);
                fd_in = fd[0]; 
@@ -242,28 +240,14 @@ void processPipe(command *cmd)
      }
 }
 
-// process command
+/* process command */
 
 void process(command *cmd) 
 {
-     /* // check for exit */
-     /* if (strcmp(cmd->argv[0], "exit") == 0) */
-     /*      exit(0); */
-     /* // check for cd */
-     /* else if (strcmp(cmd->argv[0], "cd") == 0) */
-     /* { */
-     /*     cd(cmd); */
-     /*     return; */
-     /* } */
-     
      int i;
      int executedBuiltin = 0;
-     pid_t pid;
-     int status;
-     int fd[2]; 
-     int fd_in = 0;
      
-     // check for built in commands
+     /* check for built in commands */
      for (i = 0; i < NUM_COMMANDS; i++) 
      {
           if (strcmp(functionTable[i].name, cmd->argv[0]) == 0)
@@ -284,11 +268,7 @@ void process(command *cmd)
 
 int main(int argc, char **argv)
 {
-     int i = 0;
      char input[1024];
-     // cmdlist holds all of the commands
-     
-     // cmd points to current command structure
      command *cmd = 0;
      
      buildFunctionTable();
@@ -303,7 +283,6 @@ int main(int argc, char **argv)
                printf("$  ");
           else
           {
-               // printf("%s \n", input);
                cmd = parse(input);
                
                if(cmd && cmd->argc == 0)
@@ -315,10 +294,6 @@ int main(int argc, char **argv)
                }
                else if (cmd)
                     process(cmd);
-               else if (isatty(0))
-                    printf("$  Invalid Command!!!!");
-               else
-                    printf("  Invalid Command!!!!");
                
                freeCmd(cmd);
                
@@ -328,4 +303,3 @@ int main(int argc, char **argv)
      }     
      return 0;
 }
-

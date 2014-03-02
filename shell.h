@@ -1,8 +1,10 @@
-// Group Members : Alexander DeOliveira, Elana Braff, Jesse Huang
+/* Group Members : Alexander DeOliveira, Elana Braff, Jesse Huang */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 typedef struct command
 {
