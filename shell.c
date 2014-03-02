@@ -238,17 +238,17 @@ void stripQuotes(command *cmd)
           for(i = 0; i < cmd->argc - 1; i++)
           {
                len = strlen(cmd->argv[i]);
-               for (j = 0; j < len; j++)
+               for (j = len-1; j >= 0; j--)
                {
                     if ((cmd->argv[i][j] == '\"' || cmd->argv[i][j] == '\'') && quoteCount == 0)
                     {
                          quote = cmd->argv[i][j];
-                         cmd->argv[i]++;
+                         memmove(&(cmd->argv[i][j]), &(cmd->argv[i][j+1]), len - j);
                          quoteCount++;
                     } 
                     else if (quoteCount == 1 && cmd->argv[i][j] == quote)
                     {
-                         cmd->argv[i][j] = '\0';
+                         memmove(&(cmd->argv[i][j]), &(cmd->argv[i][j+1]), len - j);
                          quoteCount--;
                     }
                }
@@ -284,7 +284,7 @@ void processPipe(command *cmd, char **argv)
                     dup2(fd[1], 1);
                close(fd[0]);
                execvp(cmd->argv[0], cmd->argv);
-               perror(argv[0]);
+               perror(cmd->argv[0]);
                exit(EXIT_FAILURE);
           }
           else
