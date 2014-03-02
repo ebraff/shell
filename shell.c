@@ -171,8 +171,6 @@ int exit_cmd(int argc, char **argv)
           return 1;
      }
      
-     /* free everything */
-     //freeCmd(cmd->head);
      exit(exitCode);
 }
 
