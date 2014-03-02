@@ -13,6 +13,7 @@ command *parse(char *input)
           exit(1);
      }
      command *head = cmd;
+     memset(cmd->argv, 0, 50);
      cmd->argv[0] = input;
      cmd->argc = 1;
      cmd->next = NULL;
@@ -192,7 +193,11 @@ void process(command *cmd)
      
      int i;
      int executedBuiltin = 0;
-     int pid, status;
+     pid_t pid;
+     int status;
+     int fd[2]; 
+     int fd_in = 0;
+     
      // check for built in commands
      for (i = 0; i < NUM_COMMANDS; i++) 
      {
@@ -207,13 +212,13 @@ void process(command *cmd)
      {
           pid = fork();
           
-          if (pid == 0) 
+          if (pid == 0)
           {
                // child process
                execvp(cmd->argv[0], cmd->argv);
                perror(cmd->argv[0]);
                exit(1);
-          } 
+          }
           pid = wait(&status);
           if (pid == -1)
                exit(1);
