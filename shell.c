@@ -12,18 +12,23 @@ command *parse(char *input)
      int count, arg = 0, start = 0,quote = 0;
      command *cmd, *head;
      
-     if (!(cmd = (command *)malloc(sizeof(struct command)))) {
+     if (!(cmd = (command *)malloc(sizeof(struct command)))) 
+     {
           printf("bad memory allocation\n");
           exit(EXIT_FAILURE);
      }
      head = cmd;
      memset(cmd->argv, 0, 51);
+     /* get rid of leading spaces and tabs */
+     while (*input == ' ' || *input == '\t')
+          input++;
      cmd->argv[0] = input;
      cmd->argc = 1;
      cmd->next = NULL;
      cmd->head = head;
      
-     if (input[strlen(input)-1] == '\n') {
+     if (input[strlen(input)-1] == '\n') 
+     {
           input[strlen(input)-1] = '\0';
      }
      
@@ -40,15 +45,14 @@ command *parse(char *input)
           switch(input[count])
           {
           case ' ' :
+          case '\t':
                if (!quote)  /* found a space not inside of a quote */
                {
                     input[count] = '\0';
                     
                     /* remove extra spaces */
-                    while(input[count + 1] == ' ')
+                    while(input[count + 1] == ' ' || input[count + 1] == '\t')
                          count++;
-                    
-                    
                     
                     if (input[count + 1] != '|'
                         && input[count + 1] != '\0')
@@ -58,7 +62,7 @@ command *parse(char *input)
                     }
                     
                }
-               break;                          
+          break;                          
           case '\"' : /* falls into the next case */
           case '\'' :
                if (quote && input[start] == input[count]) /* check the quote flag to see if we are looking for a matching quote */
@@ -77,7 +81,8 @@ command *parse(char *input)
                     (cmd->argc)++;
                     /* Create new command struct */
                     input[count] = '\0';
-                    if (!(cmd->next = (command *)malloc(sizeof(struct command)))) {
+                    if (!(cmd->next = (command *)malloc(sizeof(struct command)))) 
+                    {
                          fprintf(stderr, "bad memory allocation\n");
                          exit(EXIT_FAILURE);
                     }
@@ -88,7 +93,7 @@ command *parse(char *input)
                     cmd->head = head;
                     
                     /* remove extra spaces */
-                    while(input[count + 1] == ' ')
+                    while(input[count + 1] == ' ' || input[count + 1] == '\t')
                          count++;
                     
                     cmd->argv[0] = input + count + 1;
@@ -125,8 +130,8 @@ int cd_cmd(int argc, char **argv)
      }
      else if (argc == 2) 
      {
-          chdir(argv[1]);    
-          perror("cd");
+          if(chdir(argv[1]) == -1)    
+               perror("cd");
      }
      else                       /* barf */
      {
@@ -183,7 +188,8 @@ void buildFunctionTable(void)
 /* frees the command from memory */
 void freeCmd(command *cmd) 
 {
-     while(cmd!=NULL){
+     while(cmd!=NULL)
+     {
           command *temp = cmd;
           cmd=cmd->next;
           free(temp);
@@ -285,8 +291,11 @@ int isEmpty(char *input)
      if (len < 2)
           return 1;
      for (i = 0; i < len-1; i++)
+     {
           if (input[i] != ' ' && input[i] != '\t')
-               return 0;               
+               return 0;
+     }
+     
      return 1;
 }
 
@@ -311,9 +320,8 @@ int main(int argc, char **argv)
                printf("$  ");
           else
           {
-               
                cmd = parse(input);
-               
+               printCmd(cmd);
                /* few error checking conditions */
                if(cmd && cmd->argc == 0)
                {
