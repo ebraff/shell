@@ -68,6 +68,7 @@ command *parse(char *input)
                     cmd = cmd->next;
                     cmd->argc = 1;
                     arg=0;
+                    memset(cmd->argv, 0, 51);
                     
                     // remove extra spaces
                     while(input[count + 1] == ' ')
@@ -296,7 +297,7 @@ int main(int argc, char **argv)
           {
                
                cmd = parse(input);
-               //printCmd(cmd);
+               printCmd(cmd);
                
                if(cmd)
                {
