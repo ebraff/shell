@@ -27,6 +27,12 @@ command *parse(char *input)
      
      for(count = 0; input[count] != '\0' || count < strlen(input); count++)
      {
+         if (cmd->argc == 50)
+         {
+             printf("Too many arguments!\n");
+             head->argc = 0;
+             return;
+         }
           // what is the current character
           switch(input[count])
           {
@@ -39,10 +45,13 @@ command *parse(char *input)
                          count++;
                     
                     
-                    cmd->argv[++arg] = input + count + 1;
-                    if (cmd->argv[arg][0] != '|'
-                        && cmd->argv[arg][0] != '\0')
-                         cmd->argc++;
+                   
+                    if (input[count + 1] != '|'
+                        && input[count + 1] != '\0')
+                    {
+                        cmd->argc++;
+                        cmd->argv[++arg] = input + count + 1;
+                    }
                     
                }
                break;                          
@@ -276,7 +285,7 @@ void process(command *cmd)
 
 int main(int argc, char **argv)
 {
-     
+    int i = 0;
      char input[1024];
      // cmdlist holds all of the commands
      
@@ -292,39 +301,32 @@ int main(int argc, char **argv)
      {
           
           if (strlen(input) < 2)
-               printf("$  ");
-          
+              printf("$  ");
           else
           {
-               
-               cmd = parse(input);
-               printCmd(cmd);
-               
-               if(cmd)
-               {
-                    process(cmd);
-               /* else if (isatty(0)) */
-               /*      printf("$  Invalid Command!!!!"); */
-               /* else	 */
-               /*      printf("  Invalid Command!!!!"); */
-               
-                    freeCmd(cmd);
-               }
-               /* int i,j=1; */
-               
-               /* while(cmd!=NULL){ */
-               /*      printf("command %d: ", j++); */
-               /*      for(i = 0; i < cmd->argc; i++) */
-               /*           printf("'%s', ", cmd->argv[i]); */
-               /*      printf("\n"); */
-               /*      command *temp = cmd; */
-               /*      cmd=cmd->next; */
-               /*      free(temp); */
-               /* } */
-               
-               if (isatty(0))
-                    printf("$  ");
+              // printf("%s \n", input);
+              cmd = parse(input);
+                  
+              if(cmd && cmd->argc == 0)
+              {
+                  freeCmd(cmd);
+                  if (isatty(0))
+                      printf("$  ");
+                  continue;
+              }
+              else if (cmd)
+                  process(cmd);
+              else if (isatty(0))
+                  printf("$  Invalid Command!!!!");
+              else
+                  printf("  Invalid Command!!!!");
+                  
+              freeCmd(cmd);
+                  
+              if (isatty(0))
+                  printf("$  ");
           }
      }     
-     return 0;
+    return 0;
 }
+  
