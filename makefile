@@ -1,4 +1,4 @@
-COMPILER = gcc -ansi -pedantic -Wall
+COMPILER = gcc
 
 all: header program
 
