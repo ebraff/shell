@@ -61,6 +61,7 @@ command *parse(char *input)
           case '|' :
                if (!quote) // found a pipe not inside of a quote 
                {
+                    (cmd->argc)++;
                     //Create new command struct
                     input[count] = '\0';
                     cmd->next = (command *)malloc(sizeof(struct command));
@@ -85,6 +86,7 @@ command *parse(char *input)
           printf("%s\n", "Invalid quotes. Exiting program");
           return NULL;
      }
+     (cmd->argc)++;
      return head;
      
 }
@@ -94,7 +96,7 @@ struct builtins functionTable[NUM_COMMANDS];
 // counts the number of arguments for a command
 int getNumArgs(command *cmd) 
 {
-     return cmd->argc;
+     return cmd->argc - 1;
 }
 
 
@@ -176,6 +178,38 @@ void printCmd(command *cmd)
      
 }
 
+void loop_pipe(command *cmd) 
+{
+     int   fd[2];
+     pid_t pid;
+     int   fd_in = 0;
+     
+     while (cmd != NULL)
+     {
+          pipe(fd);
+          pid = fork();
+          if (pid == -1)
+          {
+               exit(EXIT_FAILURE);
+          }
+          else if (pid == 0)
+          {
+               dup2(fd_in, 0); //change the input according to the old one 
+               if (cmd->next != NULL)
+                    dup2(fd[1], 1);
+               close(fd[0]);
+               execvp(cmd->argv[0], cmd->argv);
+               exit(EXIT_FAILURE);
+          }
+          else
+          {
+               wait(NULL);
+               close(fd[1]);
+               fd_in = fd[0]; //save the input for the next command
+               cmd = cmd->next;
+          }
+     }
+}
 
 // process command
 
@@ -210,21 +244,23 @@ void process(command *cmd)
      }
      if (!executedBuiltin)
      {
-          pid = fork();
+          loop_pipe(cmd);
+
+          /* pid = fork(); */
           
-          if (pid == 0)
-          {
-               // child process
-               execvp(cmd->argv[0], cmd->argv);
-               perror(cmd->argv[0]);
-               exit(1);
-          }
-          pid = wait(&status);
-          if (pid == -1)
-               exit(1);
-          if (WIFEXITED(status)) {
-               printf("process %d exit with status %d\n", pid, WEXITSTATUS(status));
-          }
+          /* if (pid == 0) */
+          /* { */
+          /*      // child process */
+          /*      execvp(cmd->argv[0], cmd->argv); */
+          /*      perror(cmd->argv[0]); */
+          /*      exit(1); */
+          /* } */
+          /* pid = wait(&status); */
+          /* if (pid == -1) */
+          /*      exit(1); */
+          /* if (WIFEXITED(status)) { */
+          /*      printf("process %d exit with status %d\n", pid, WEXITSTATUS(status)); */
+          /* } */
      }     
      
 }
