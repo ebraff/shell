@@ -13,7 +13,7 @@ command *parse(char *input)
           exit(1);
      }
      command *head = cmd;
-     memset(cmd->argv, 0, 50);
+     memset(cmd->argv, 0, 51);
      cmd->argv[0] = input;
      cmd->argc = 1;
      cmd->next = NULL;
@@ -27,6 +27,12 @@ command *parse(char *input)
      
      for(count = 0; input[count] != '\0' || count < strlen(input); count++)
      {
+          if (cmd->argc == 50)
+          {
+               printf("Too many arguments!\n");
+               head->argc = 0;
+               return;
+          }
           // what is the current character
           switch(input[count])
           {
@@ -39,10 +45,13 @@ command *parse(char *input)
                          count++;
                     
                     
-                    cmd->argv[++arg] = input + count + 1;
-                    if (cmd->argv[arg][0] != '|'
-                        && cmd->argv[arg][0] != '\0')
+                    
+                    if (input[count + 1] != '|'
+                        && input[count + 1] != '\0')
+                    {
                          cmd->argc++;
+                         cmd->argv[++arg] = input + count + 1;
+                    }
                     
                }
                break;                          
@@ -68,6 +77,7 @@ command *parse(char *input)
                     cmd = cmd->next;
                     cmd->argc = 1;
                     arg=0;
+                    memset(cmd->argv, 0, 51);
                     
                     // remove extra spaces
                     while(input[count + 1] == ' ')
@@ -83,7 +93,8 @@ command *parse(char *input)
      }
      if(quote)
      {
-          printf("%s\n", "Invalid quotes. Exiting program");
+          fprintf(stderr, "%s\n", "Mismatched quotes");
+          freeCmd(cmd);
           return NULL;
      }
      (cmd->argc)++;
@@ -136,9 +147,20 @@ int cd_cmd(command *cmd)
 
 int exit_cmd(command *cmd) 
 {
+     int numArgs = getNumArgs(cmd);
+     int exitCode = 0;
+     if (numArgs == 2)
+     {
+          exitCode = atoi(cmd->argv[1]);
+     }
+     else if (numArgs > 2)
+     {
+          fprintf(stderr, "exit: too many arguments\n");
+          return 1;
+     }
      // free everything
      freeCmd(cmd);
-     exit(0);
+     exit(exitCode);
 }
 
 void buildFunctionTable(void) 
@@ -178,11 +200,12 @@ void printCmd(command *cmd)
      
 }
 
-void loop_pipe(command *cmd) 
+void processPipe(command *cmd) 
 {
      int   fd[2];
      pid_t pid;
      int   fd_in = 0;
+     int status;
      
      while (cmd != NULL)
      {
@@ -194,7 +217,8 @@ void loop_pipe(command *cmd)
           }
           else if (pid == 0)
           {
-               dup2(fd_in, 0); //change the input according to the old one 
+               /* child process */
+               dup2(fd_in, 0); 
                if (cmd->next != NULL)
                     dup2(fd[1], 1);
                close(fd[0]);
@@ -203,11 +227,18 @@ void loop_pipe(command *cmd)
           }
           else
           {
-               wait(NULL);
+               /* parent */
+               pid = wait(&status);
+               if (pid == -1)
+                    exit(1);
+               if (WIFEXITED(status)) {
+                    printf("process %d exit with status %d\n", pid, WEXITSTATUS(status));
+               }
+               
                close(fd[1]);
-               fd_in = fd[0]; //save the input for the next command
-               cmd = cmd->next;
+               fd_in = fd[0]; 
           }
+          cmd = cmd->next;
      }
 }
 
@@ -244,23 +275,7 @@ void process(command *cmd)
      }
      if (!executedBuiltin)
      {
-          loop_pipe(cmd);
-
-          /* pid = fork(); */
-          
-          /* if (pid == 0) */
-          /* { */
-          /*      // child process */
-          /*      execvp(cmd->argv[0], cmd->argv); */
-          /*      perror(cmd->argv[0]); */
-          /*      exit(1); */
-          /* } */
-          /* pid = wait(&status); */
-          /* if (pid == -1) */
-          /*      exit(1); */
-          /* if (WIFEXITED(status)) { */
-          /*      printf("process %d exit with status %d\n", pid, WEXITSTATUS(status)); */
-          /* } */
+          processPipe(cmd);
      }     
      
 }
@@ -269,7 +284,7 @@ void process(command *cmd)
 
 int main(int argc, char **argv)
 {
-     
+     int i = 0;
      char input[1024];
      // cmdlist holds all of the commands
      
@@ -286,35 +301,26 @@ int main(int argc, char **argv)
           
           if (strlen(input) < 2)
                printf("$  ");
-          
           else
           {
-               
+               // printf("%s \n", input);
                cmd = parse(input);
-               printCmd(cmd);
                
-               if(cmd)
+               if(cmd && cmd->argc == 0)
+               {
+                    freeCmd(cmd);
+                    if (isatty(0))
+                         printf("$  ");
+                    continue;
+               }
+               else if (cmd)
                     process(cmd);
                else if (isatty(0))
                     printf("$  Invalid Command!!!!");
-               else	
+               else
                     printf("  Invalid Command!!!!");
                
-               
-               
                freeCmd(cmd);
-               
-               /* int i,j=1; */
-               
-               /* while(cmd!=NULL){ */
-               /*      printf("command %d: ", j++); */
-               /*      for(i = 0; i < cmd->argc; i++) */
-               /*           printf("'%s', ", cmd->argv[i]); */
-               /*      printf("\n"); */
-               /*      command *temp = cmd; */
-               /*      cmd=cmd->next; */
-               /*      free(temp); */
-               /* } */
                
                if (isatty(0))
                     printf("$  ");
@@ -322,3 +328,4 @@ int main(int argc, char **argv)
      }     
      return 0;
 }
+
