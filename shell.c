@@ -83,7 +83,8 @@ command *parse(char *input)
      }
      if(quote)
      {
-          printf("%s\n", "Invalid quotes. Exiting program");
+          fprintf(stderr, "%s\n", "Mismatched quotes");
+          freeCmd(cmd);
           return NULL;
      }
      (cmd->argc)++;
@@ -136,9 +137,20 @@ int cd_cmd(command *cmd)
 
 int exit_cmd(command *cmd) 
 {
+     int numArgs = getNumArgs(cmd);
+     int exitCode = 0;
+     if (numArgs == 2)
+     {
+          exitCode = atoi(cmd->argv[1]);
+     }
+     else if (numArgs > 2)
+     {
+          fprintf(stderr, "exit: too many arguments\n");
+          return 1;
+     }
      // free everything
      freeCmd(cmd);
-     exit(0);
+     exit(exitCode);
 }
 
 void buildFunctionTable(void) 
@@ -284,19 +296,18 @@ int main(int argc, char **argv)
           {
                
                cmd = parse(input);
-               printCmd(cmd);
+               //printCmd(cmd);
                
                if(cmd)
+               {
                     process(cmd);
-               else if (isatty(0))
-                    printf("$  Invalid Command!!!!");
-               else	
-                    printf("  Invalid Command!!!!");
+               /* else if (isatty(0)) */
+               /*      printf("$  Invalid Command!!!!"); */
+               /* else	 */
+               /*      printf("  Invalid Command!!!!"); */
                
-               
-               
-               freeCmd(cmd);
-               
+                    freeCmd(cmd);
+               }
                /* int i,j=1; */
                
                /* while(cmd!=NULL){ */
