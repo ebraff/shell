@@ -275,6 +275,17 @@ void process(command *cmd)
      
 }
 
+/* check if command is empty */
+int isEmpty(char *input)
+{
+     int i, len = strlen(input);
+     if (len < 2)
+          return 1;
+     for (i = 0; i < len-1; i++)
+          if (input[i] != ' ' && input[i] != '\t')
+               return 0;               
+     return 1;
+}
 
 
 int main(int argc, char **argv)
@@ -293,7 +304,7 @@ int main(int argc, char **argv)
      while(fgets(input, 1024, stdin) != NULL) 
      {
           
-          if (strlen(input) < 2)
+          if (isEmpty(input))
                printf("$  ");
           else
           {
@@ -303,7 +314,7 @@ int main(int argc, char **argv)
               /* few error checking conditions */
               if(cmd && cmd->argc == 0)
               {
-                  freeCmd(cmd);
+                  freeCmd(cmd->head);
                   if (isatty(0))
                       printf("$  ");
                   continue;
@@ -315,7 +326,7 @@ int main(int argc, char **argv)
               else
                   printf("  Invalid Command!!!!");
                   
-              freeCmd(cmd);
+              freeCmd(cmd->head);
                   
               if (isatty(0))
                   printf("$  ");

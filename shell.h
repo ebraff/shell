@@ -33,3 +33,4 @@ int cd_cmd(command *cmd);
 int exit_cmd(command *cmd);
 void buildFunctionTable(void);
 int isBuiltIn(command *cmdName);
+int isEmpty(char *input);
