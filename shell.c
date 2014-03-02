@@ -228,6 +228,35 @@ int isBuiltIn(command *cmd)
      return 0;
 }
 
+/* Remove quotes from the argument list */
+void stripQuotes(command *cmd)
+{
+     int i, j, len, quoteCount = 0;
+     char quote;
+     while(cmd!=NULL)
+     {
+          for(i = 0; i < cmd->argc - 1; i++)
+          {
+               len = strlen(cmd->argv[i]);
+               for (j = 0; j < len; j++)
+               {
+                    if ((cmd->argv[i][j] == '\"' || cmd->argv[i][j] == '\'') && quoteCount == 0)
+                    {
+                         quote = cmd->argv[i][j];
+                         cmd->argv[i]++;
+                         quoteCount++;
+                    } 
+                    else if (quoteCount == 1 && cmd->argv[i][j] == quote)
+                    {
+                         cmd->argv[i][j] = '\0';
+                         quoteCount--;
+                    }
+               }
+          }
+          cmd=cmd->next;
+     }
+}
+
 /* helper function for process it will handle all piping */
 void processPipe(command *cmd, char **argv) 
 {
@@ -319,7 +348,8 @@ int main(int argc, char **argv)
           else
           {
                cmd = parse(input);
-               printCmd(cmd);
+               stripQuotes(cmd);
+               
                /* few error checking conditions */
                if(cmd && cmd->argc == 0)
                {
