@@ -2,15 +2,19 @@
 #include "shell.h"
 #define NUM_COMMANDS 2
 
+/* stores the built in function table */
+struct builtins functionTable[NUM_COMMANDS];
+
 /* takes in pointer to user input,
    and pointer to cmd (assumes it is already allocated) */
 command *parse(char *input) 
 {
      int count, arg = 0, start = 0,quote = 0;
      command *cmd, *head;
+     
      if (!(cmd = (command *)malloc(sizeof(struct command)))) {
           printf("bad memory allocation\n");
-          exit(1);
+          exit(EXIT_FAILURE);
      }
      head = cmd;
      memset(cmd->argv, 0, 51);
@@ -19,12 +23,9 @@ command *parse(char *input)
      cmd->next = NULL;
      cmd->head = head;
      
-     
      if (input[strlen(input)-1] == '\n') {
           input[strlen(input)-1] = '\0';
      }
-     
-     
      
      for(count = 0; input[count] != '\0' || count < strlen(input); count++)
      {
@@ -34,6 +35,7 @@ command *parse(char *input)
                head->argc = 0;
                return head;
           }
+          
           /* what is the current character */
           switch(input[count])
           {
@@ -41,7 +43,7 @@ command *parse(char *input)
                if (!quote)  /* found a space not inside of a quote */
                {
                     input[count] = '\0';
-
+                    
                     /* remove extra spaces */
                     while(input[count + 1] == ' ')
                          count++;
@@ -75,7 +77,10 @@ command *parse(char *input)
                     (cmd->argc)++;
                     /* Create new command struct */
                     input[count] = '\0';
-                    cmd->next = (command *)malloc(sizeof(struct command));
+                    if (!(cmd->next = (command *)malloc(sizeof(struct command)))) {
+                         fprintf(stderr, "bad memory allocation\n");
+                         exit(EXIT_FAILURE);
+                    }
                     cmd = cmd->next;
                     cmd->argc = 1;
                     arg=0;
@@ -105,15 +110,13 @@ command *parse(char *input)
      
 }
 
-struct builtins functionTable[NUM_COMMANDS];
-
 /* counts the number of arguments for a command */
 int getNumArgs(command *cmd) 
 {
      return cmd->argc - 1;
 }
 
-
+/* executes the built in cd function */
 int cd_cmd(command *cmd) 
 {
      int numArgs = getNumArgs(cmd);
@@ -149,6 +152,7 @@ int cd_cmd(command *cmd)
      return 0;
 }
 
+/* executes the built in exit function */
 int exit_cmd(command *cmd) 
 {
      int numArgs = getNumArgs(cmd);
@@ -162,12 +166,13 @@ int exit_cmd(command *cmd)
           fprintf(stderr, "exit: too many arguments\n");
           return 1;
      }
-
+     
      /* free everything */
      freeCmd(cmd->head);
      exit(exitCode);
 }
 
+/* Initializes the function table */
 void buildFunctionTable(void) 
 {
      functionTable[0].name = "cd";
@@ -175,8 +180,6 @@ void buildFunctionTable(void)
      functionTable[1].name = "exit";
      functionTable[1].f = &exit_cmd;
 }
-
-
 
 /* frees the command from memory */
 void freeCmd(command *cmd) 
@@ -188,6 +191,7 @@ void freeCmd(command *cmd)
      }     
 }
 
+/* Debug function for printing out the command structures */
 void printCmd(command *cmd)
 {
      int i;
@@ -224,16 +228,16 @@ int isBuiltIn(command *cmd)
 /* helper function for process it will handle all piping */
 void processPipe(command *cmd) 
 {
-     int fd[2];
-     int pid;
-     int fd_in = 0;
-     int status;
+     int fd[2];                 /* file descriptor for pipe */
+     int pid;                   /* process id */
+     int fd_in = 0;             /* input file descriptor */
+     int status;                /* stores exit status */
      
      while (cmd != NULL)
      {
           if (isBuiltIn(cmd))
                return;
-
+          
           pipe(fd);
           pid = fork();
           if (pid == -1)
@@ -263,7 +267,6 @@ void processPipe(command *cmd)
      }
 }
 
-
 /* process command */
 void process(command *cmd) 
 {
@@ -287,7 +290,7 @@ int isEmpty(char *input)
      return 1;
 }
 
-
+/* main function, everything starts here */
 int main(int argc, char **argv)
 {
      char input[1024];
@@ -299,7 +302,7 @@ int main(int argc, char **argv)
      
      if (isatty(0))
           printf("$  ");
-
+     
      /* grab input */ 
      while(fgets(input, 1024, stdin) != NULL) 
      {
@@ -308,28 +311,28 @@ int main(int argc, char **argv)
                printf("$  ");
           else
           {
-
-              cmd = parse(input);
-
-              /* few error checking conditions */
-              if(cmd && cmd->argc == 0)
-              {
-                  freeCmd(cmd->head);
-                  if (isatty(0))
-                      printf("$  ");
-                  continue;
-              }
-              else if (cmd)
-                  process(cmd);
-              else if (isatty(0))
-                  printf("$  Invalid Command!!!!");
-              else
-                  printf("  Invalid Command!!!!");
-                  
-              freeCmd(cmd->head);
-                  
-              if (isatty(0))
-                  printf("$  ");
+               
+               cmd = parse(input);
+               
+               /* few error checking conditions */
+               if(cmd && cmd->argc == 0)
+               {
+                    freeCmd(cmd->head);
+                    if (isatty(0))
+                         printf("$  ");
+                    continue;
+               }
+               else if (cmd)
+                    process(cmd);
+               else if (isatty(0))
+                    printf("$  Invalid Command!!!!\n");
+               else
+                    printf("  Invalid Command!!!!\n");
+               
+               freeCmd(cmd->head);
+               
+               if (isatty(0))
+                    printf("$  ");
           }
      }     
      return 0;
