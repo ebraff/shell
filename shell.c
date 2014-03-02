@@ -13,6 +13,7 @@ command *parse(char *input)
           exit(1);
      }
      command *head = cmd;
+     memset(cmd->argv,0,51);
      cmd->argv[0] = input;
      cmd->argc = 1;
      cmd->next = NULL;
@@ -209,7 +210,7 @@ void process(command *cmd)
 			  {
 				   (*(functionTable[i].f))(cmd);
 				   executedBuiltin = 1;
-				   break;
+				   return;
 			  }
 		 }
 		 
