@@ -18,7 +18,7 @@ typedef struct command
 typedef struct builtins 
 {
      char *name;	/* name of function */
-     int (*f)(command *c);	/* function to execute for the built-in command */
+     int (*f)(int argc, char **argv);	/* function to execute for the built-in command */
 } builtins;
 
 
@@ -26,11 +26,11 @@ typedef struct builtins
 command *parse(char *input);
 void freeCmd(command *cmd);
 void printCmd(command *cmd);
-void process(command *cmd);
-void cd(command *cmd);
+void processPipe(command *cmd, char **argv);
+void process(command *cmd, char **argv);
 int getNumArgs(command *cmd);
-int cd_cmd(command *cmd);
-int exit_cmd(command *cmd);
+int cd_cmd(int argc, char **argv);
+int exit_cmd(int argc, char **argv);
 void buildFunctionTable(void);
 int isBuiltIn(command *cmdName);
 int isEmpty(char *input);

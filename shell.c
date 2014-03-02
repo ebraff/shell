@@ -117,16 +117,16 @@ int getNumArgs(command *cmd)
 }
 
 /* executes the built in cd function */
-int cd_cmd(command *cmd) 
+int cd_cmd(int argc, char **argv) 
 {
-     int numArgs = getNumArgs(cmd);
-     if (numArgs == 1)
+     if (argc == 1)
      {
           chdir(getenv("HOME"));
      }
-     else if (numArgs == 2) 
+     else if (argc == 2) 
      {
-          chdir(cmd->argv[1]);                    
+          chdir(argv[1]);    
+          perror("cd");
      }
      else                       /* barf */
      {
@@ -153,22 +153,21 @@ int cd_cmd(command *cmd)
 }
 
 /* executes the built in exit function */
-int exit_cmd(command *cmd) 
+int exit_cmd(int argc, char **argv) 
 {
-     int numArgs = getNumArgs(cmd);
      int exitCode = 0;
-     if (numArgs == 2)
+     if (argc == 2)
      {
-          exitCode = atoi(cmd->argv[1]);
+          exitCode = atoi(argv[1]);
      }
-     else if (numArgs > 2)
+     else if (argc > 2)
      {
           fprintf(stderr, "exit: too many arguments\n");
           return 1;
      }
      
      /* free everything */
-     freeCmd(cmd->head);
+     //freeCmd(cmd->head);
      exit(exitCode);
 }
 
@@ -218,7 +217,7 @@ int isBuiltIn(command *cmd)
      {
           if (strcmp(functionTable[i].name, cmd->argv[0]) == 0)
           {
-               (*(functionTable[i].f))(cmd);
+               (*(functionTable[i].f))(getNumArgs(cmd), cmd->argv);
                return 1;
           }
      }
@@ -226,7 +225,7 @@ int isBuiltIn(command *cmd)
 }
 
 /* helper function for process it will handle all piping */
-void processPipe(command *cmd) 
+void processPipe(command *cmd, char **argv) 
 {
      int fd[2];                 /* file descriptor for pipe */
      int pid;                   /* process id */
@@ -252,6 +251,7 @@ void processPipe(command *cmd)
                     dup2(fd[1], 1);
                close(fd[0]);
                execvp(cmd->argv[0], cmd->argv);
+               perror(argv[0]);
                exit(EXIT_FAILURE);
           }
           else
@@ -268,12 +268,12 @@ void processPipe(command *cmd)
 }
 
 /* process command */
-void process(command *cmd) 
+void process(command *cmd, char **argv) 
 {
      /* check for built in commands*/
      if (!isBuiltIn(cmd))
      {
-          processPipe(cmd);
+          processPipe(cmd, argv);
      }     
      
 }
@@ -323,7 +323,7 @@ int main(int argc, char **argv)
                     continue;
                }
                else if (cmd)
-                    process(cmd);
+                    process(cmd, argv);
                else if (isatty(0))
                     printf("$  Invalid Command!!!!\n");
                else
