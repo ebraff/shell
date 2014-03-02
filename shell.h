@@ -26,11 +26,8 @@ void printCmd(command *cmd);
 void process(command *cmd);
 void cd(command *cmd);
 int getNumArgs(command *cmd);
-
 int cd_cmd(command *cmd);
-
 int exit_cmd(command *cmd);
-
 void buildFunctionTable(void);
 
 
