@@ -45,12 +45,12 @@ command *parse(char *input)
                          count++;
                     
                     
-                   
+                    
                     if (input[count + 1] != '|'
                         && input[count + 1] != '\0')
                     {
-                        cmd->argc++;
-                        cmd->argv[++arg] = input + count + 1;
+                         cmd->argc++;
+                         cmd->argv[++arg] = input + count + 1;
                     }
                     
                }
@@ -75,7 +75,6 @@ command *parse(char *input)
                     input[count] = '\0';
                     cmd->next = (command *)malloc(sizeof(struct command));
                     cmd = cmd->next;
-                    memset(cmd->argv,0,51);
                     cmd->argc = 1;
                     arg=0;
                     memset(cmd->argv, 0, 51);
@@ -299,7 +298,7 @@ int main(int argc, char **argv)
      {
           
           if (strlen(input) < 2)
-              printf("$  ");
+               printf("$  ");
           else
           {
               cmd = parse(input);
@@ -325,6 +324,5 @@ int main(int argc, char **argv)
                   printf("$  ");
           }
      }     
-    return 0;
+     return 0;
 }
-  
