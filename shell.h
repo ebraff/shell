@@ -12,6 +12,7 @@ typedef struct command
      int argc;
      int pipe[2];
      struct command *next;
+     struct command *head;
 } command;
 
 typedef struct builtins 

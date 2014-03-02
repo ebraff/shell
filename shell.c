@@ -4,7 +4,6 @@
 
 /* takes in pointer to user input,
    and pointer to cmd (assumes it is already allocated) */
-
 command *parse(char *input) 
 {
      int count, arg = 0, start = 0,quote = 0;
@@ -18,6 +17,7 @@ command *parse(char *input)
      cmd->argv[0] = input;
      cmd->argc = 1;
      cmd->next = NULL;
+     cmd->head = head;
      
      
      if (input[strlen(input)-1] == '\n') {
@@ -80,6 +80,7 @@ command *parse(char *input)
                     cmd->argc = 1;
                     arg=0;
                     memset(cmd->argv, 0, 51);
+                    cmd->head = head;
                     
                     /* remove extra spaces */
                     while(input[count + 1] == ' ')
@@ -163,7 +164,7 @@ int exit_cmd(command *cmd)
      }
 
      /* free everything */
-     freeCmd(cmd);
+     freeCmd(cmd->head);
      exit(exitCode);
 }
 
